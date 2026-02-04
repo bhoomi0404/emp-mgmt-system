@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>{% block title %}Employee Management{% endblock %}</title>
+		<link rel="stylesheet" href="/static/style.css">
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="container">
+        <div class="header-content">
+          <h1>👥 Employee Management</h1>
+          <p class="tagline">Manage your team efficiently</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
