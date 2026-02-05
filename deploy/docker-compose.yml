@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: employee_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: employee_db
+      MYSQL_USER: emp_user
+      MYSQL_PASSWORD: emp_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../backend/app/db/migrations/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "emp_user", "-pemp_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Backend API (FastAPI)
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: employee_api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: emp_user
+      DB_PASSWORD: emp_pass
+      DB_NAME: employee_db
+      DB_POOL_SIZE: 10
+      CORS_ORIGINS: "http://localhost,http://localhost:8000,http://localhost:80"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: employee_nginx
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../frontend/static:/usr/share/nginx/html/static:ro
+      - ../frontend/templates:/usr/share/nginx/html/templates:ro
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge
